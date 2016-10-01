@@ -1,0 +1,30 @@
+This dataset contains traffic violation information from all electronic traffic violations issued in the County of Montgomery.
+
+
+
+There are 816698 observation each indicates a single violation in the dataset with 24 variables: 
+
+* "Date.Of.Violation"  : Date where violation occured ex :1/1/2012
+* Time.Of.Violation : time when vilation happend ex: 00:01:00
+* "Violation.Description"  : Description of violation in text
+* "Violation.Location"     : The Location name in text
+* "Latitude"         :    Latitude location ex: 77.04796
+* "Longitude"   :   Longitude location ex:39.05742
+* "Geolocation"     :  both Latitude and Longitude  ex:77.1273633333333, 39.0908983333333
+* "Belts.Flag"      : if driver had belt at time of violation (Yes, NO)
+* "Personal.Injury"  :  if any personal injury occured as result of the violation (Yes, NO)
+* "Property.Damage"   : if any property damaged occured as result of the violation (Yes, NO)
+* "Commercial.License": If driver has Commercial License  (Yes, NO)
+* "Commercial.Vehicle": if Vehicle has Commercial.License (Yes, No)
+* "Alcohol"    : If Driver was DUI at time of violation (Yes, No)
+* "Work.Zone"    : if violation happend in a work zone (Yes, No)
+* "Violation.State"  : The state where violation happend ex: MD
+* "Vehicle.Type"    : ex: Automobile, Truck, Motorbike
+* "Vehicle.Production.Year": ex:1990
+* "Vehicle.Manfacturer" : ex:Toyota
+* "Vehicle.Model"      : ex: CoROLLA 
+* "Vehicle.Color"          : ex: Black, White
+* "Caused.an.Accident" : if the violation caused an accident (Yes, No)
+* "Gender"            : Gender of driver (M,F)
+* "Driver.City" : City of driver ex:BETHESDA
+* "Driver.State"  : ex: MD
