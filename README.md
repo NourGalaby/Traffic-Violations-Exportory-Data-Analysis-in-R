@@ -5,3 +5,591 @@ This dataset contains traffic violation information from all electronic traffic 
 It contains violations from 2012 to 2016. more than 800,000 entry.
 
 This Project is part of Udacity Data Analyst Nanodegree
+
+
+---
+output: 
+  html_document: 
+    fig_height: 6.25
+    fig_width: 8.75
+---
+Traffic Violations EDA by Nour Galaby
+========================================================
+This dataset contains traffic violation information from all electronic traffic violations issued in the County of Montgomery.
+
+It contains violations from 2012 to 2016. more than 800,000 entry. 
+
+Lets see what we can find..
+
+
+Data Summary:
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+# Load all of the packages that you end up using
+# in your analysis in this code chunk.
+
+# Notice that the parameter "echo" was set to FALSE for this code chunk.
+# This prevents the code from displaying in the knitted HTML output.
+# You should set echo=FALSE for all code chunks in your file.
+
+library(ggplot2)
+library(beepr)
+library(scales)
+library(dplyr)
+```
+
+```{r echo=FALSE, Load_the_Data}
+# Load the Data
+#getwd()
+#list.files()
+#setwd("D:\\Work")
+setwd("G:\\nano\\P4 R Analysis")
+tr <- read.csv("Traffic_Violation_Dataset.csv")
+#beeb()
+#names(tr)
+
+#alarm()
+
+
+
+
+#tr_small <- tr[sample(1:nrow(tr), 1000,              replace=FALSE),]
+tr_small <- tr
+
+summary(tr)
+
+```
+
+# Univariate Plots Section
+
+### Exploring The Location of Violations
+
+Lets start by plotting the locations of each violations 
+
+```{r echo=FALSE, Locations1}
+
+#plotting all datapoints everywhere
+ggplot(data=tr_small,aes(x=Latitude,y=Longitude)) + geom_point()
+```
+  
+  We can see there is two main locations points are centered around
+  * plotting the two main parts one at a time. and avoiding outliers 
+
+* adding alpha since data is crowded
+ By zooming into the main two points...
+```{r echo=FALSE, Location2}
+#faceting accidents and not
+ggplot(data=subset(tr_small, tr_small$Longitude<0 & tr_small$Longitude > -78 & tr_small$Latitude >35 ),aes(x=Latitude,y=Longitude)) + geom_point(alpha=0.05) 
+
+ggplot(data=subset(tr_small, tr_small$Longitude>0),aes(x=Latitude,y=Longitude)) + geom_point(alpha=0.15)
+######################################
+```
+We can see they kind of form a map.
+
+Lets see where accidents occure compared to where violations occure 
+```{r echo=FALSE, 'Locations and Accidents'}
+#faceting accidents and not
+ggplot(data=subset(tr_small, tr_small$Longitude<0 & tr_small$Longitude > -78 & tr_small$Latitude >35 ),aes(x=Latitude,y=Longitude)) +
+  geom_point(alpha=0.05 ,aes(color=Caused.an.Accident ))  
+
+ggplot(data=subset(tr_small, tr_small$Longitude>0),aes(x=Latitude,y=Longitude)) +
+ geom_point(alpha=0.15,aes(color=Caused.an.Accident )) 
+
+
+```
+
+```{r echo=FALSE, 'Locations and Accidents2'}
+
+#usa <- map_data("usa") 
+ #ggplot(data=subset(tr_small, tr_small$Longitude>0),aes(x=Latitude,y=Longitude)) +
+  # geom_polygon( data = usa, aes(x=long, y = lat, group = group)) +
+  #coord_fixed(1.3) 
+   #geom_point(alpha=0.15,aes(color=Caused.an.Accident ))  
+
+
+```
+
+### Exploring The Types of Vehicles
+
+Data contain data about many types from Cars to trucks.. 
+Lets see explore those types 
+
+```{r echo=FALSE, Types}
+
+
+table(tr_small$Vehicle.Type)
+```
+We Can see form the table that Automobile is the most occuring one which is what we expect
+
+
+lets see how it compares to other types visualy 
+```{r echo=FALSE, Types2}
+
+#order(table(tr_small$Vehicle.Manfacturer))
+ggplot(data=tr_small,aes(Vehicle.Type)) + geom_bar()
+
+
+
+
+```
+
+Its not clear from this plot.. lets order the types from most occuring to least
+
+```{r echo=FALSE, Ordered_Types}
+reorder_vehicles <- function(x) {
+  factor(x, levels = names(sort(table(x),decreasing = TRUE)))
+}
+
+ggplot(data=tr_small,aes(reorder_vehicles(  Vehicle.Type))) + geom_bar() + coord_flip()
+#beep()
+
+```
+
+Log scale...
+```{r echo=FALSE, Types3}
+
+
+top_types_names <- row.names(as.data.frame(summary(tr_small$Vehicle.Type, max=20)))
+#choosing names of top 10 types
+
+ggplot(data=tr_small,aes(reorder_vehicles(  Vehicle.Type)) ) +
+geom_bar(  position = 'dodge',width = 0.7) + 
+  xlab("Types") + 
+  xlim( top_types_names) +
+  coord_cartesian(xlim=c(1,9)) + scale_y_log10() + coord_flip()
+#add breaks
+
+```
+
+### Top Models on the dataset
+```{r echo=FALSE, Car_Models}
+  # top vechile models 
+
+top_manf_names <- row.names(as.data.frame(summary(tr_small$Vehicle.Manfacturer, max=10)))
+
+ggplot(data=tr_small,aes(reorder_vehicles(  Vehicle.Manfacturer)) ) +
+geom_bar(  position = 'dodge',width = 0.7) + 
+  xlab("Manfucaturer") + 
+  xlim( top_manf_names) +
+  coord_cartesian(xlim=c(1,9)) 
+
+```
+
+
+### Top Colors of cars
+```{r echo=FALSE, Colors}
+top_colors <- row.names(as.data.frame(summary(tr_small$Vehicle.Color, max=10)))
+
+ggplot(data=tr_small,aes(reorder_vehicles(  Vehicle.Color)) ) +
+geom_bar(  position = 'dodge',width = 0.7) + 
+  xlab("Top Colors that make violations") + 
+  xlim( top_colors) +
+  coord_cartesian(xlim=c(1,9)) 
+#------------------------------
+```
+
+
+### Exploring the Dates and times 
+
+Perhabs the most intersting variable in the dataset. When violations happen ? 
+
+
+```{r echo=FALSE, Dates}
+#all date time series
+tr_small$Date_new <- as.Date(tr_small$Date.Of.Violation,format="%m/%d/%Y")
+ggplot(data=tr_small,aes(Date_new)) +
+  geom_freqpoly(stat = 'count') + 
+  xlab("Date") + 
+  ylab("Violations")
+
+#we can see its not clear 
+
+# EDIT: can also be treated as histogram and plotted using 
+#ggplot(data=tr_small,aes(Date_new)) +
+ # geom_freqpoly(binwidth=7) +
+  #xlab("Date") + ylab("Violations")
+# but already worked on the other way.
+```
+
+  This data from the year 2012 to 2016 .. there may be some patterns. but its not clear and  its too noisy to note anything.
+lets smooth it and try again
+
+### Adding smoother
+```{r echo=FALSE, Smooth_Dates}
+#using Geom_smooth()
+
+ggplot(data=tr_small,aes(Date_new)) +
+  geom_smooth(stat='count')+
+  #geom_freqpoly(stat = 'count') +
+  xlab("Date") + ylab("Violations")
+```
+
+defualt smoother doesnt help much.. that is because there is too many data..
+Lets group by week. and take average over that week and see 
+
+
+### Group by week
+```{r echo=FALSE, Weekly}
+#plotting over each week
+tr_small$Date_week <- as.Date(cut(tr_small$Date_new,breaks = "week"))
+ggplot(data=tr_small,aes(Date_week)) +
+ geom_smooth(stat='count')+
+#  geom_freqpoly(stat = 'count') +
+  xlab("Date") + ylab("Violations per Week")
+#-----------------------------
+```
+
+Much better.. if you look closely there maybe a pattern here... but we will look into that shortly...
+Lets try grouping by month too.
+
+
+
+### Grouping over each month
+```{r echo=FALSE, Monthly}
+tr_small$Date_month <- as.Date(cut(tr_small$Date_new,breaks = "month"))
+
+ggplot(data=tr_small,aes(Date_month)) +
+  geom_smooth(stat='count')+
+  #geom_freqpoly(stat = 'count') +
+  xlab("Date") + ylab("Violations per Month")
+#------------------------
+```
+
+now the pattern is clear ... to make it even clearer lets group by year and plot years over each other
+
+# Coloring Years
+
+```{r echo=FALSE, Clear_years}
+tmp <- as.Date(cut(tr_small$Date_new,breaks = "year"))
+tmp <- as.numeric(format(tmp,'%Y'))
+tr_small$Date_year <- factor(tmp)
+
+ggplot(data=tr_small,aes(Date_month)) +
+  geom_smooth(stat='count',aes(color=Date_year))+
+  #geom_freqpoly(stat = 'count') +
+  xlab("Date") + ylab("Violations per Month")
+
+```
+
+We can see that Violations increase over years.. and there seem to be a certain time where violations peak.
+
+# Plotting years 
+
+```{r echo=FALSE, Make_it_one}
+#Each year on its own
+# we want to make them over each other .. grouping by year and making all months the same
+tr_small$month_only <-  as.numeric(format(tr_small$Date_month,'%m') )
+ggplot(data=tr_small,aes(month_only)) +
+  #geom_freqpoly(stat = 'count') +
+  xlab("Month") + ylab("Violations per Month")+
+geom_smooth(stat='count',aes(color=Date_year))
+
+#-----
+```
+
+Here we can see that at May we see the most violations of the year..
+and followed by october ? could that be the increase of people who travel there at the summer ? or simply the start of summer and people go out more ? 
+
+and at 2015 something was diiferent and the peak was no longer at may.
+
+
+
+
+Lets group by week too
+### same for week
+```{r echo=FALSE, Date_weeks}
+tr_small$week_only <- round(as.numeric(tr_small$Date_week )/7 )%% 52 
+
+ggplot(data=tr_small,aes(week_only)) +
+geom_smooth(stat='count',aes(color=Date_year))+
+ # geom_histogram(binwidth=1,aes(color=Date_year)) +
+  xlab("Week no") + ylab("Violations per week")
+```
+
+Its not very clear lets try something else..
+
+```{r echo=FALSE, Date_weeks2}
+
+ggplot(data=tr_small,aes(week_only)) +
+  #geom_smooth(stat='count',aes(color=Date_year))+
+  geom_histogram(binwidth=1,aes(color=Date_year)) +
+  xlab("Week no") + ylab("Violations per week")
+```
+
+We can see from this violations clearly how much each week differ from each year
+
+### Time 
+
+```{r echo=FALSE, Time1}
+#making new variable for time only
+ tr_small$Time_new <- strptime(tr_small$Time.Of.Violation,format="%H:%M:%S")
+tr_small$Time_new2 <- strftime(tr_small$Time_new,format = '%H:%M')
+
+tr_small$time_only <- as.factor(tr_small$Time_new2)
+
+
+ggplot(data=tr_small,aes(Time_new)) + geom_freqpoly(stat = 'count') +
+  xlab("Date") + 
+  ylab("Violations") 
+
+
+#we can see its not clear 
+```
+
+
+Lets make it clearer... by taking average over days for the same time.
+
+
+```{r echo=FALSE, Time2}
+
+
+tr_tmp <- tr_small[c("Date_new", "Time_new2", "time_only", "Date_year")]
+hours <- group_by(tr_tmp,time_only)
+hours_df <- summarise(hours,
+                    
+                          n= n() )
+
+
+
+ggplot(data=hours_df,aes(x=time_only,y=n)) +
+  geom_point(alpha=0.3,aes(color=n)) +
+  scale_color_continuous(low = "green",high = "black")   +
+ scale_x_discrete(breaks = c('00:00','02:00','04:00','06:00','08:00','10:00','12:00','14:00','16:00','18:00','20:00','22:00','23:50') ) + 
+  ylab("No of Violations") + 
+  xlab("Time of Day") 
+
+```
+
+ We can see from this plot 
+at 6:00 AM most days the number of violations
+
+
+                          
+                          
+                          
+### Caused damage
+
+```{r echo=FALSE, Caused.Any.Damage}
+#Property Damage
+
+cond <- (tr_small$Caused.an.Accident == "Yes"  | tr_small$Property.Damage == "Yes" | tr_small$Personal.Injury == "Yes")
+tr_small$Caused.Any.Damage <- ifelse(cond, "Yes", "No")
+
+cond2 <- (tr$Caused.an.Accident == "Yes"  | tr$Property.Damage == "Yes" | tr$Personal.Injury == "Yes")
+tr$Caused.Any.Damage <- ifelse(cond2, "Yes", "No")
+
+
+ggplot(tr_small,aes(x=Caused.Any.Damage)) + 
+  geom_bar(aes(y= (..count..) / sum(..count..) ))+
+        scale_y_continuous(labels = percent_format())+
+   geom_text(aes(y = ((..count..)/sum(..count..)), label = scales::percent((..count..)/sum(..count..))), stat = "count", vjust = -0.25 ) 
+rm(cond)
+```
+
+ We can see that only 3.9% from all violation caused personal or property damage.
+
+
+
+
+### accidents that caused a problem.. new variable
+
+
+### What is the structure of your dataset?
+There are 816698 observation each indicates a single violation in the dataset with 24 variables: 
+
+* "Date.Of.Violation"  : Date where violation occured ex :1/1/2012
+* Time.Of.Violation : time when vilation happend ex: 00:01:00
+* "Violation.Description"  : Description of violation in text
+* "Violation.Location"     : The Location name in text
+* "Latitude"         :    Latitude location ex: 77.04796
+* "Longitude"   :   Longitude location ex:39.05742
+* "Geolocation"     :  both Latitude and Longitude  ex:77.1273633333333, 39.0908983333333
+* "Belts.Flag"      : if driver had belt at time of violation (Yes, NO)
+* "Personal.Injury"  :  if any personal injury occured as result of the violation (Yes, NO)
+* "Property.Damage"   : if any property damaged occured as result of the violation (Yes, NO)
+* "Commercial.License": If driver has Commercial License  (Yes, NO)
+* "Commercial.Vehicle": if Vehicle has Commercial.License (Yes, No)
+* "Alcohol"    : If Driver was DUI at time of violation (Yes, No)
+* "Work.Zone"    : if violation happend in a work zone (Yes, No)
+* "Violation.State"  : The state where violation happend ex: MD
+* "Vehicle.Type"    : ex: Automobile, Truck, Motorbike
+* "Vehicle.Production.Year": ex:1990
+* "Vehicle.Manfacturer" : ex:Toyota
+* "Vehicle.Model"      : ex: CoROLLA 
+* "Vehicle.Color"          : ex: Black, White
+* "Caused.an.Accident" : if the violation caused an accident (Yes, No)
+* "Gender"            : Gender of driver (M,F)
+* "Driver.City" : City of driver ex:BETHESDA
+* "Driver.State"  : ex: MD
+
+
+### What is/are the main feature(s) of interest in your dataset?
+I main features of interest are the date and time of violation. and the damage it caused. I would like to see how violations happen yearly, and if there is a certian period where a lot of violations happen.
+
+### Did you create any new variables from existing variables in the dataset?
+I created 5 variables to help me to group by date:  
+Date_new : same date but in Date format:   
+Date_month: the date of the month of violation ex: 2013-12-01  
+Date_week: similar to Date_month but for weeks   
+month_only: the month number. ex: 12   
+week_only: the number of the week in one year where violation happend.  
+Time_new: POSXit, format of time  
+Tme_new2 : chr format of time  
+time_only: factor format of time  
+
+
+I created "Caused.Any.Damage" variable. to be able to tell if an violation causeded any personal injury or proprety danage or an Accident  (Yes, No)
+### Of the features you investigated, were there any unusual distributions? Did you perform any operations on the data to tidy, adjust, or change the form of the data? If so, why did you do this?
+
+
+# Bivariate Analysis
+
+# Bivariate Plots Section
+
+#### number of violations by grouped by gender and month
+
+```{r echo=FALSE, Bivariate_Plots}
+table(tr_small$Gender,tr_small$month_only,tr_small$Date_year)
+```
+ 
+ for both genders, May seems to always have the peak. 
+
+  #### Vehicle type and Color 
+ 
+```{r echo=FALSE, Color_type}
+d <- ggplot(tr_small, aes(Vehicle.Type, Vehicle.Color)) 
+d + geom_bin2d() + 
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+#beep()
+```
+  
+  Some colors only apear in Automobile like Copper and chrome.. other colors are so common along all types like Black and White and Gray
+  
+  
+  ## Violation Damage
+  
+In this part I will discuss what type of violations and how much damage  
+### Most common violation types
+
+```{r echo=FALSE, Color_damage}
+tr_tmp <- tr_small[c("Caused.Any.Damage", "Violation.Description","Alcohol","Gender")]
+
+lethal <- group_by(tr_tmp,Violation.Description,Caused.Any.Damage)
+
+lethal_df <- summarise(lethal,
+    n=n())
+
+#sort 
+lethal_df= lethal_df[order(lethal_df$n,decreasing = TRUE),]
+head(lethal_df,15)
+
+```
+
+
+
+### Plotting People that caused damage by date and gender
+```{r echo=FALSE, Date_gender_damage}
+d <- ggplot( subset(tr_small,tr_small$Caused.Any.Damage == "Yes"), aes(Date.Of.Violation, Gender))
+d + geom_bin2d() 
+```
+I notice something here: Most violations are by males. but the days where males don't make many violations. Female make many violations. and vice verse..
+
+```{r echo=FALSE, Alcohol}
+d <- ggplot(subset(tr_small,tr_small$Alcohol=="Yes"), aes(Time_new, Gender)) 
+d + geom_bin2d()  + coord_flip() + scale_x_datetime(date_breaks = '1 hour', date_labels = " %I %p") + xlab("Hour") 
+beep()
+```
+It seems that most Alcohol violations for both men and women happen between 2 PM and 5 PM
+
+
+```{r echo=FALSE, Gender}
+ggplot(data= subset(tr_small, tr_small$Gender != 'U' ),aes(month_only)) +
+  geom_smooth(stat='count',aes(color=Gender))+
+  #geom_freqpoly(stat = 'count', aes(color=Gender)) +
+  xlab("Date") + ylab("Violations per Month") + facet_wrap(~ Date_year)
+
+
+
+```
+
+
+# Multivariant 
+
+### Did you observe any interesting relationships between the other features (not the main feature(s) of interest)?
+in the plot between the date of violation and Gender, I noticed usually when there is high number of violations of women there is low number of violations of men, and vice versa.. I did not expect that
+
+
+
+
+------
+
+# Final Plots and Summary
+
+### Plot One
+```{r echo=FALSE, Plot_One}
+
+
+ggplot(data=hours_df,aes(x=time_only,y=n)) +
+  geom_point(alpha=0.3,aes(color=n)) +
+  scale_color_continuous(low = "green",high = "black")   +
+ scale_x_discrete(breaks = c('00:00','02:00','04:00','06:00','08:00','10:00','12:00','14:00','16:00','18:00','20:00','22:00','23:50') ) + 
+  ylab("No of Violations") + 
+  xlab("Time of Day") 
+
+
+```
+
+### Description One
+ 
+Here are some things to notive about this graph
+
+*   at 00:00 till 8:00 the variance in the number of violations is very low (all points are close)
+*   violations peak at 9:00 and also at 11:00 PM 
+
+
+### Plot Two
+```{r echo=FALSE, Plot_Two}
+
+ggplot(data=tr_small,aes(Date_month)) +
+  geom_smooth(stat='count',aes(color=Date_year))+
+  #geom_freqpoly(stat = 'count') +
+  xlab("Date") + ylab("Violations per Month")
+
+
+```
+
+### Description Two
+*from this plot we can see number of violations increase over the years till 2014 it reached a peak. then started to come down at 2015 
+
+* May and October have the most violations in all years 
+
+### Plot Three
+```{r echo=FALSE, Plot_Three}
+
+ggplot(data=subset(tr_small,tr_small$Date_year!=2016),aes(week_only)) +
+  #geom_smooth(stat='count',aes(color=Date_year))+
+  geom_histogram(binwidth=1 ,aes(color=Date_year)) +
+  xlab("Week no") + ylab("Violations per week")
+```
+
+### Description Three
+
+Here we can compare the same week in each year. I decided to ignore 2016 since its data is not complete.
+
+
+
+------
+
+
+
+# Reflection
+
+
+The traffic violation data set contains information on more than 800,000 violation occured from 2012 till 2016.
+I this shows how much violations increase through the years.and what are the most times violations occure in, which I learned May and October see the most violations. 
+
+Also I used this data to get the most popular cars and models.
+
+# Refrences
+http://stackoverflow.com/questions/3695497/ggplot-showing-instead-of-counts-in-charts-of-categorical-variables
