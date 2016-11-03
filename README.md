@@ -5,12 +5,3 @@ This dataset contains traffic violation information from all electronic traffic 
 It contains violations from 2012 to 2016. more than 800,000 entry.
 
 This Project is part of Udacity Data Analyst Nanodegree
-
-
----
-output: 
-  html_document: 
-    fig_height: 6.25
-    fig_width: 8.75
----
-
